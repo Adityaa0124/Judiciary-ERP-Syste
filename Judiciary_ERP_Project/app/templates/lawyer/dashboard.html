@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}Lawyer Dashboard — Judiciary ERP{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Welcome, {{ lawyer.name }}</h1>
+</div>
+
+<!-- ── My Cases ── -->
+<div class="card">
+    <div class="card-header">My Cases</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Case #</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>My Role</th>
+                    <th>Judge</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cases %}
+                <tr>
+                    <td>{{ c.case_number }}</td>
+                    <td>{{ c.title }}</td>
+                    <td>{{ c.case_type }}</td>
+                    <td><span class="badge badge-progress">{{ c.role_in_case }}</span></td>
+                    <td>{{ c.judge_name or '—' }}</td>
+                    <td>
+                        {% if c.status == 'Pending' %}
+                            <span class="badge badge-pending">{{ c.status }}</span>
+                        {% elif c.status == 'In Progress' %}
+                            <span class="badge badge-progress">{{ c.status }}</span>
+                        {% elif c.status == 'Closed' %}
+                            <span class="badge badge-closed">{{ c.status }}</span>
+                        {% else %}
+                            <span class="badge">{{ c.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted">No cases linked.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Upcoming Hearings ── -->
+<div class="card">
+    <div class="card-header">Upcoming Hearings</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Case #</th>
+                    <th>Case Title</th>
+                    <th>Courtroom</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in hearings %}
+                <tr>
+                    <td>{{ h.hearing_date }}</td>
+                    <td>{{ h.hearing_time }}</td>
+                    <td>{{ h.case_number }}</td>
+                    <td>{{ h.title }}</td>
+                    <td>{{ h.room_name or '—' }}</td>
+                    <td>{{ h.purpose }}</td>
+                    <td>
+                        {% if h.hearing_status == 'Scheduled' %}
+                            <span class="badge badge-scheduled">{{ h.hearing_status }}</span>
+                        {% elif h.hearing_status == 'Completed' %}
+                            <span class="badge badge-completed">{{ h.hearing_status }}</span>
+                        {% else %}
+                            <span class="badge">{{ h.hearing_status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="text-center text-muted">No upcoming hearings.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

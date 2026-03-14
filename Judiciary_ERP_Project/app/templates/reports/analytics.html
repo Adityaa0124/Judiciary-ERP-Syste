@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Analytics — Judiciary ERP{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Analytics &amp; Reports</h1>
+</div>
+
+<div class="charts-grid">
+    <!-- ── Case Status Distribution ── -->
+    <div class="card">
+        <div class="card-header">Case Status Distribution</div>
+        <div class="table-responsive">
+            <table>
+                <thead><tr><th>Status</th><th>Count</th><th>Bar</th></tr></thead>
+                <tbody>
+                    {% for s in case_stats %}
+                    <tr>
+                        <td>
+                            {% if s.status == 'Pending' %}
+                                <span class="badge badge-pending">{{ s.status }}</span>
+                            {% elif s.status == 'In Progress' %}
+                                <span class="badge badge-progress">{{ s.status }}</span>
+                            {% elif s.status == 'Closed' %}
+                                <span class="badge badge-closed">{{ s.status }}</span>
+                            {% else %}
+                                <span class="badge">{{ s.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td><strong>{{ s.total }}</strong></td>
+                        <td style="width:50%;">
+                            <div style="background:var(--primary-light); height:20px; border-radius:4px;
+                                        width:{{ (s.total * 100 / (case_stats | map(attribute='total') | max)) | int }}%;">
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center text-muted">No data.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Case Type Distribution ── -->
+    <div class="card">
+        <div class="card-header">Case Type Distribution</div>
+        <div class="table-responsive">
+            <table>
+                <thead><tr><th>Type</th><th>Count</th><th>Bar</th></tr></thead>
+                <tbody>
+                    {% for t in case_types %}
+                    <tr>
+                        <td>{{ t.case_type }}</td>
+                        <td><strong>{{ t.total }}</strong></td>
+                        <td style="width:50%;">
+                            <div style="background:var(--accent); height:20px; border-radius:4px;
+                                        width:{{ (t.total * 100 / (case_types | map(attribute='total') | max)) | int }}%;">
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center text-muted">No data.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ── Judge Workload ── -->
+<div class="card">
+    <div class="card-header">Judge Workload (Cases per Judge)</div>
+    <div class="table-responsive">
+        <table>
+            <thead><tr><th>Judge</th><th>Cases</th><th>Workload</th></tr></thead>
+            <tbody>
+                {% for w in judge_workload %}
+                <tr>
+                    <td>{{ w.name }}</td>
+                    <td><strong>{{ w.case_count }}</strong></td>
+                    <td style="width:50%;">
+                        {% if judge_workload | map(attribute='case_count') | max > 0 %}
+                        <div style="background:var(--success); height:20px; border-radius:4px;
+                                    width:{{ (w.case_count * 100 / (judge_workload | map(attribute='case_count') | max)) | int }}%;">
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center text-muted">No data.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Courtroom Usage ── -->
+<div class="card">
+    <div class="card-header">Courtroom Usage (Hearings per Courtroom)</div>
+    <div class="table-responsive">
+        <table>
+            <thead><tr><th>Courtroom</th><th>Location</th><th>Hearings</th><th>Usage</th></tr></thead>
+            <tbody>
+                {% for cr in courtroom_usage %}
+                <tr>
+                    <td>{{ cr.room_name }}</td>
+                    <td>{{ cr.location }}</td>
+                    <td><strong>{{ cr.hearing_count }}</strong></td>
+                    <td style="width:40%;">
+                        {% if courtroom_usage | map(attribute='hearing_count') | max > 0 %}
+                        <div style="background:var(--info); height:20px; border-radius:4px;
+                                    width:{{ (cr.hearing_count * 100 / (courtroom_usage | map(attribute='hearing_count') | max)) | int }}%;">
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-center text-muted">No data.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Monthly Filing Trend ── -->
+<div class="card">
+    <div class="card-header">Monthly Filing Trend</div>
+    <div class="table-responsive">
+        <table>
+            <thead><tr><th>Month</th><th>Cases Filed</th><th>Trend</th></tr></thead>
+            <tbody>
+                {% for m in monthly_filings %}
+                <tr>
+                    <td>{{ m.month }}</td>
+                    <td><strong>{{ m.total }}</strong></td>
+                    <td style="width:50%;">
+                        {% if monthly_filings | map(attribute='total') | max > 0 %}
+                        <div style="background:var(--danger); height:20px; border-radius:4px;
+                                    width:{{ (m.total * 100 / (monthly_filings | map(attribute='total') | max)) | int }}%;">
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center text-muted">No data.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

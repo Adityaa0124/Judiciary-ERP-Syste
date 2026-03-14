@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Judge Dashboard — Judiciary ERP{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Welcome, Judge {{ judge.name }}</h1>
+</div>
+
+<!-- ── Assigned Cases ── -->
+<div class="card">
+    <div class="card-header">My Assigned Cases</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Case #</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Filed</th>
+                    <th>Update Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cases %}
+                <tr>
+                    <td>{{ c.case_number }}</td>
+                    <td>{{ c.title }}</td>
+                    <td>{{ c.case_type }}</td>
+                    <td>
+                        {% if c.status == 'Pending' %}
+                            <span class="badge badge-pending">{{ c.status }}</span>
+                        {% elif c.status == 'In Progress' %}
+                            <span class="badge badge-progress">{{ c.status }}</span>
+                        {% elif c.status == 'Closed' %}
+                            <span class="badge badge-closed">{{ c.status }}</span>
+                        {% else %}
+                            <span class="badge">{{ c.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.filing_date }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('judge.update_case_status') }}"
+                              style="display:flex; gap:0.5rem;">
+                            <input type="hidden" name="case_id" value="{{ c.case_id }}">
+                            <select name="status" class="form-control" style="width:auto; min-width:130px;">
+                                <option value="Pending"     {% if c.status=='Pending'     %}selected{% endif %}>Pending</option>
+                                <option value="In Progress" {% if c.status=='In Progress' %}selected{% endif %}>In Progress</option>
+                                <option value="Closed"      {% if c.status=='Closed'      %}selected{% endif %}>Closed</option>
+                            </select>
+                            <button type="submit" class="btn btn-warning btn-sm">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="text-center text-muted">No cases assigned.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Upcoming Hearings ── -->
+<div class="card">
+    <div class="card-header">Upcoming Hearings</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Case #</th>
+                    <th>Case Title</th>
+                    <th>Courtroom</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                    <th>Update</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in hearings %}
+                <tr>
+                    <td>{{ h.hearing_date }}</td>
+                    <td>{{ h.hearing_time }}</td>
+                    <td>{{ h.case_number }}</td>
+                    <td>{{ h.title }}</td>
+                    <td>{{ h.room_name or '—' }}</td>
+                    <td>{{ h.purpose }}</td>
+                    <td>
+                        {% if h.hearing_status == 'Scheduled' %}
+                            <span class="badge badge-scheduled">{{ h.hearing_status }}</span>
+                        {% elif h.hearing_status == 'Completed' %}
+                            <span class="badge badge-completed">{{ h.hearing_status }}</span>
+                        {% else %}
+                            <span class="badge">{{ h.hearing_status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('judge.update_hearing_status') }}"
+                              style="display:flex; gap:0.5rem;">
+                            <input type="hidden" name="hearing_id" value="{{ h.hearing_id }}">
+                            <select name="status" class="form-control" style="width:auto; min-width:120px;">
+                                <option value="Scheduled"  {% if h.hearing_status=='Scheduled'  %}selected{% endif %}>Scheduled</option>
+                                <option value="Completed"  {% if h.hearing_status=='Completed'  %}selected{% endif %}>Completed</option>
+                                <option value="Adjourned"  {% if h.hearing_status=='Adjourned'  %}selected{% endif %}>Adjourned</option>
+                                <option value="Cancelled"  {% if h.hearing_status=='Cancelled'  %}selected{% endif %}>Cancelled</option>
+                            </select>
+                            <button type="submit" class="btn btn-warning btn-sm">Update</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" class="text-center text-muted">No hearings found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

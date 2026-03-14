@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Clerk Dashboard — Judiciary ERP{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Clerk Dashboard</h1>
+</div>
+
+<!-- ── Register New Case ── -->
+<div class="card">
+    <div class="card-header">Register New Case</div>
+    <form method="POST" action="{{ url_for('clerk.register_case') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="case_number">Case Number</label>
+                <input type="text" id="case_number" name="case_number" class="form-control"
+                    placeholder="e.g., CIV-2026-001" required>
+            </div>
+            <div class="form-group">
+                <label for="title">Case Title</label>
+                <input type="text" id="title" name="title" class="form-control" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="case_type">Case Type</label>
+                <select id="case_type" name="case_type" class="form-control" required>
+                    <option value="">— Select —</option>
+                    <option value="Civil">Civil</option>
+                    <option value="Criminal">Criminal</option>
+                    <option value="Family">Family</option>
+                    <option value="Corporate">Corporate</option>
+                    <option value="Constitutional">Constitutional</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="filing_date">Filing Date</label>
+                <input type="date" id="filing_date" name="filing_date" class="form-control" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="description">Description</label>
+            <textarea id="description" name="description" class="form-control"
+                placeholder="Brief case description"></textarea>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Assign Judge (Required)</label>
+                <select name="judge_id" class="form-control" required>
+                    <option value="">— Select Judge —</option>
+                    {% for j in all_judges %}
+                    <option value="{{ j.judge_id }}">{{ j.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Link Party (Optional)</label>
+                <select name="party_id" class="form-control">
+                    <option value="">— Select Party —</option>
+                    {% for p in all_parties %}
+                    <option value="{{ p.party_id }}">{{ p.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Link Lawyer (Optional)</label>
+                <select name="lawyer_id" class="form-control">
+                    <option value="">— Select Lawyer —</option>
+                    {% for l in all_lawyers %}
+                    <option value="{{ l.lawyer_id }}">{{ l.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+
+        <button type="submit" class="btn btn-primary">Register Case</button>
+    </form>
+</div>
+
+<!-- ── All Cases ── -->
+<div class="card">
+    <div class="card-header">All Cases</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Case #</th>
+                    <th>Title</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Filing Date</th>
+                    <th>Judge</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in cases %}
+                <tr>
+                    <td>{{ c.case_number }}</td>
+                    <td>{{ c.title }}</td>
+                    <td>{{ c.case_type }}</td>
+                    <td>
+                        {% if c.status == 'Pending' %}
+                        <span class="badge badge-pending">{{ c.status }}</span>
+                        {% elif c.status == 'In Progress' %}
+                        <span class="badge badge-progress">{{ c.status }}</span>
+                        {% elif c.status == 'Closed' %}
+                        <span class="badge badge-closed">{{ c.status }}</span>
+                        {% else %}
+                        <span class="badge">{{ c.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ c.filing_date }}</td>
+                    <td>{{ c.judge_name or '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('clerk.case_details', case_id=c.case_id) }}"
+                            class="btn btn-primary btn-sm">Details</a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted">No cases found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

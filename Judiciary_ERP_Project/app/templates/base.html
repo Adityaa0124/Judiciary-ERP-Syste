@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Judiciary ERP{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    {% if session.get('user_id') %}
+    <!-- ── Dynamic Navbar ── -->
+    <nav class="navbar">
+        <div class="navbar-brand">⚖️ Judiciary <span>ERP</span></div>
+        <div class="navbar-links">
+
+            {% if session.get('role') == 'Admin' %}
+                <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('reports.analytics') }}">Analytics</a>
+            {% elif session.get('role') == 'Clerk' %}
+                <a href="{{ url_for('clerk.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('reports.analytics') }}">Analytics</a>
+            {% elif session.get('role') == 'Judge' %}
+                <a href="{{ url_for('judge.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('reports.analytics') }}">Analytics</a>
+            {% elif session.get('role') == 'Lawyer' %}
+                <a href="{{ url_for('lawyer.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('reports.analytics') }}">Analytics</a>
+            {% elif session.get('role') == 'Party' %}
+                <a href="{{ url_for('party.dashboard') }}">Dashboard</a>
+            {% endif %}
+
+            <span style="color:rgba(255,255,255,0.6); font-size:0.85rem;">
+                {{ session.get('username') }} ({{ session.get('role') }})
+            </span>
+            <a href="{{ url_for('auth.logout') }}" class="btn-logout">Logout</a>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- ── Flash Messages ── -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+</body>
+</html>

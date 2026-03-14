@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% block title %}Case Details — Judiciary ERP{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Case: {{ case.case_number }}</h1>
+    <a href="{{ url_for('clerk.dashboard') }}" class="btn btn-primary btn-sm">← Back</a>
+</div>
+
+<div class="card">
+    <div class="card-header">Case Information</div>
+    <div class="form-row">
+        <div><strong>Title:</strong> {{ case.title }}</div>
+        <div><strong>Type:</strong> {{ case.case_type }}</div>
+    </div>
+    <div class="form-row mt-1">
+        <div><strong>Status:</strong>
+            {% if case.status == 'Pending' %}
+            <span class="badge badge-pending">{{ case.status }}</span>
+            {% elif case.status == 'In Progress' %}
+            <span class="badge badge-progress">{{ case.status }}</span>
+            {% elif case.status == 'Closed' %}
+            <span class="badge badge-closed">{{ case.status }}</span>
+            {% else %}
+            <span class="badge">{{ case.status }}</span>
+            {% endif %}
+        </div>
+        <div><strong>Filed:</strong> {{ case.filing_date }}</div>
+    </div>
+    <div class="mt-1"><strong>Judge:</strong> {{ case.judge_name or 'Not assigned' }}</div>
+    {% if case.description %}
+    <div class="mt-1"><strong>Description:</strong> {{ case.description }}</div>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-header">Assign Judge</div>
+    <form method="POST" action="{{ url_for('clerk.assign_judge') }}"
+        style="display:flex; gap:1rem; align-items:flex-end;">
+        <input type="hidden" name="case_id" value="{{ case.case_id }}">
+        <div class="form-group" style="flex:1; margin-bottom:0;">
+            <label for="judge_id">Judge</label>
+            <select id="judge_id" name="judge_id" class="form-control" required>
+                <option value="">— Select Judge —</option>
+                {% for j in all_judges %}
+                <option value="{{ j.judge_id }}" {% if case.judge_id==j.judge_id %}selected{% endif %}>
+                    {{ j.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Assign</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">Linked Parties</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in parties %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.email }}</td>
+                    <td><span class="badge badge-progress">{{ p.party_role }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No parties linked.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <form method="POST" action="{{ url_for('clerk.link_party') }}" class="mt-2"
+        style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+        <input type="hidden" name="case_id" value="{{ case.case_id }}">
+        <div class="form-group" style="flex:1; min-width:180px; margin-bottom:0;">
+            <label>Party</label>
+            <select name="party_id" class="form-control" required>
+                <option value="">— Select —</option>
+                {% for p in all_parties %}
+                <option value="{{ p.party_id }}">{{ p.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="min-width:150px; margin-bottom:0;">
+            <label>Role</label>
+            <select name="party_role" class="form-control" required>
+                <option value="Plaintiff">Plaintiff</option>
+                <option value="Defendant">Defendant</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success btn-sm">Link Party</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">Linked Lawyers</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Bar #</th>
+                    <th>Role in Case</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in lawyers %}
+                <tr>
+                    <td>{{ l.name }}</td>
+                    <td>{{ l.bar_number }}</td>
+                    <td><span class="badge badge-progress">{{ l.role_in_case }}</span></td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="3" class="text-center text-muted">No lawyers linked.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <form method="POST" action="{{ url_for('clerk.link_lawyer') }}" class="mt-2"
+        style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+        <input type="hidden" name="case_id" value="{{ case.case_id }}">
+        <div class="form-group" style="flex:1; min-width:180px; margin-bottom:0;">
+            <label>Lawyer</label>
+            <select name="lawyer_id" class="form-control" required>
+                <option value="">— Select —</option>
+                {% for l in all_lawyers %}
+                <option value="{{ l.lawyer_id }}">{{ l.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="min-width:150px; margin-bottom:0;">
+            <label>Role</label>
+            <select name="role_in_case" class="form-control" required>
+                <option value="Prosecution">Prosecution</option>
+                <option value="Defense">Defense</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-success btn-sm">Link Lawyer</button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-header">Hearings</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Courtroom</th>
+                    <th>Purpose</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for h in hearings %}
+                <tr>
+                    <td>{{ h.hearing_date }}</td>
+                    <td>{{ h.hearing_time }}</td>
+                    <td>{{ h.room_name or '—' }}</td>
+                    <td>{{ h.purpose }}</td>
+                    <td>
+                        {% if h.status == 'Scheduled' %}
+                        <span class="badge badge-scheduled">{{ h.status }}</span>
+                        {% elif h.status == 'Completed' %}
+                        <span class="badge badge-completed">{{ h.status }}</span>
+                        {% else %}
+                        <span class="badge">{{ h.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center text-muted">No hearings scheduled.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="mt-2">
+        <h4 style="margin-bottom:0.75rem; color:var(--primary);">Schedule Hearing</h4>
+        <form method="POST" action="{{ url_for('clerk.schedule_hearing') }}">
+            <input type="hidden" name="case_id" value="{{ case.case_id }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" name="hearing_date" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="time" name="hearing_time" class="form-control" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Courtroom</label>
+                    <select name="courtroom" class="form-control" required>
+                        <option value="">— Select Courtroom —</option>
+                        <option value="COURT-101">COURT-101</option>
+                        <option value="COURT-102">COURT-102</option>
+                        <option value="COURT-103">COURT-103</option>
+                        <option value="COURT-104">COURT-104</option>
+                        <option value="COURT-105">COURT-105</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Purpose</label>
+                    <input type="text" name="purpose" class="form-control" placeholder="e.g., Initial hearing">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Schedule</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

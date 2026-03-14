@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard — Judiciary ERP{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Admin Dashboard</h1>
+</div>
+
+<!-- ── Summary Stats ── -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ judges }}</div>
+        <div class="stat-label">Judges</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ clerks }}</div>
+        <div class="stat-label">Clerks</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ lawyers }}</div>
+        <div class="stat-label">Lawyers</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ cases }}</div>
+        <div class="stat-label">Total Cases</div>
+    </div>
+</div>
+
+<!-- ── Register New User ── -->
+<div class="card">
+    <div class="card-header">Register New User</div>
+    <form method="POST" action="{{ url_for('admin.register_user') }}">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="full_name">Full Name</label>
+                <input type="text" id="full_name" name="full_name" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role" class="form-control" required onchange="toggleRoleFields(this.value)">
+                    <option value="">— Select Role —</option>
+                    <option value="Judge">Judge</option>
+                    <option value="Clerk">Clerk</option>
+                    <option value="Lawyer">Lawyer</option>
+                    <option value="Party">Party</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="phone">Phone</label>
+                <input type="text" id="phone" name="phone" class="form-control">
+            </div>
+        </div>
+
+        <!-- Dynamic role-specific fields -->
+        <div id="judge-fields" style="display:none;">
+            <div class="form-group">
+                <label for="specialization">Specialization</label>
+                <input type="text" id="specialization" name="specialization" class="form-control"
+                       placeholder="e.g., Criminal, Civil, Family">
+            </div>
+        </div>
+        <div id="clerk-fields" style="display:none;">
+            <div class="form-group">
+                <label for="department">Department</label>
+                <input type="text" id="department" name="department" class="form-control"
+                       placeholder="e.g., Civil Court, High Court">
+            </div>
+        </div>
+        <div id="lawyer-fields" style="display:none;">
+            <div class="form-group">
+                <label for="bar_number">Bar Council Number</label>
+                <input type="text" id="bar_number" name="bar_number" class="form-control">
+            </div>
+        </div>
+        <div id="party-fields" style="display:none;">
+            <div class="form-group">
+                <label for="address">Address</label>
+                <textarea id="address" name="address" class="form-control" placeholder="Full address"></textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Register User</button>
+    </form>
+</div>
+
+<!-- ── All Users Table ── -->
+<div class="card">
+    <div class="card-header">All Users</div>
+    <div class="table-responsive">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.user_id }}</td>
+                    <td>{{ user.username }}</td>
+                    <td><span class="badge badge-progress">{{ user.role }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-center text-muted">No users found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function toggleRoleFields(role) {
+    document.getElementById('judge-fields').style.display  = role === 'Judge'  ? 'block' : 'none';
+    document.getElementById('clerk-fields').style.display  = role === 'Clerk'  ? 'block' : 'none';
+    document.getElementById('lawyer-fields').style.display = role === 'Lawyer' ? 'block' : 'none';
+    document.getElementById('party-fields').style.display  = role === 'Party'  ? 'block' : 'none';
+}
+</script>
+{% endblock %}
