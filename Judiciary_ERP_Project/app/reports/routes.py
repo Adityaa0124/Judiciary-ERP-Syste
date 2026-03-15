@@ -1,73 +1,53 @@
-"""
-SERVICE 7 — Analytics & Reports
-Runs Task 4 queries: courtroom usage, judge workloads, case statistics.
-"""
-from flask import Blueprint, render_template, redirect, url_for, session, flash
+from flask import Blueprint, render_template
 from app.db import execute_query
 
 reports_bp = Blueprint('reports', __name__)
 
-
-@reports_bp.before_request
-def require_login():
-    if 'user_id' not in session:
-        flash('Please log in first.', 'danger')
-        return redirect(url_for('auth.login'))
-
-
 @reports_bp.route('/analytics')
 def analytics():
-    # ── 1. Case statistics by status ──
+    # 1. Case Status Distribution (matching 'total' for HTML)
     case_stats = execute_query(
-        """SELECT status, COUNT(*) AS total
-           FROM Cases
-           GROUP BY status
-           ORDER BY total DESC""",
+        "SELECT status, COUNT(*) as total FROM `CASE` GROUP BY status",
         fetchall=True
     )
 
-    # ── 2. Case type distribution ──
+    # 2. Case Type Distribution (matching 'case_types' and 'total')
     case_types = execute_query(
-        """SELECT case_type, COUNT(*) AS total
-           FROM Cases
-           GROUP BY case_type
-           ORDER BY total DESC""",
+        "SELECT case_type, COUNT(*) as total FROM `CASE` GROUP BY case_type",
         fetchall=True
     )
 
-    # ── 3. Judge workload (cases per judge) ──
+    # 3. Judge Workload 
     judge_workload = execute_query(
-        """SELECT j.name, COUNT(c.case_id) AS case_count
-           FROM Judge j
-           LEFT JOIN Cases c ON j.judge_id = c.judge_id
-           GROUP BY j.judge_id, j.name
-           ORDER BY case_count DESC""",
+        """SELECT j.name, COUNT(c.case_id) as case_count 
+           FROM JUDGE j 
+           LEFT JOIN `CASE` c ON j.judge_id = c.judge_id 
+           GROUP BY j.judge_id""",
         fetchall=True
     )
 
-    # ── 4. Courtroom usage (hearings per courtroom) ──
+    # 4. Courtroom Usage
     courtroom_usage = execute_query(
-        """SELECT cr.room_name, cr.location, COUNT(h.hearing_id) AS hearing_count
-           FROM Courtroom cr
-           LEFT JOIN Hearing h ON cr.courtroom_id = h.courtroom_id
-           GROUP BY cr.courtroom_id, cr.room_name, cr.location
-           ORDER BY hearing_count DESC""",
+        """SELECT courtroom as room_name, 'Main Complex' as location, COUNT(*) as hearing_count 
+           FROM HEARING 
+           WHERE courtroom IS NOT NULL
+           GROUP BY courtroom""",
         fetchall=True
     )
 
-    # ── 5. Monthly filing trend ──
+    # 5. Monthly Filing Trend
     monthly_filings = execute_query(
-        """SELECT DATE_FORMAT(filing_date, '%%Y-%%m') AS month, COUNT(*) AS total
-           FROM Cases
-           GROUP BY month
-           ORDER BY month DESC
-           LIMIT 12""",
+        """SELECT DATE_FORMAT(filing_date, '%Y-%m') as month, COUNT(*) as total 
+           FROM `CASE` 
+           GROUP BY month 
+           ORDER BY month""",
         fetchall=True
     )
 
-    return render_template('reports/analytics.html',
-                           case_stats=case_stats,
-                           case_types=case_types,
-                           judge_workload=judge_workload,
-                           courtroom_usage=courtroom_usage,
-                           monthly_filings=monthly_filings)
+    # Send all 5 variables to the HTML page!
+    return render_template('reports/analytics.html', 
+                           case_stats=case_stats or [], 
+                           case_types=case_types or [],
+                           judge_workload=judge_workload or [],
+                           courtroom_usage=courtroom_usage or [],
+                           monthly_filings=monthly_filings or [])
