@@ -1,12 +1,7 @@
-"""
-SERVICE 2 — System Administration
-Registers new Judges, Clerks, and Lawyers into the system.
-"""
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash
 from app.db import execute_query
 
 admin_bp = Blueprint('admin', __name__)
-
 
 @admin_bp.before_request
 def require_admin():
@@ -14,15 +9,13 @@ def require_admin():
         flash('Access denied. Admins only.', 'danger')
         return redirect(url_for('auth.login'))
 
-
 @admin_bp.route('/dashboard')
 def dashboard():
-    # Fetch summary counts for the admin dashboard
-    judges  = execute_query("SELECT COUNT(*) AS cnt FROM Judge",  fetchone=True)
-    clerks  = execute_query("SELECT COUNT(*) AS cnt FROM Clerk",  fetchone=True)
-    lawyers = execute_query("SELECT COUNT(*) AS cnt FROM Lawyer", fetchone=True)
-    cases   = execute_query("SELECT COUNT(*) AS cnt FROM Cases",  fetchone=True)
-    users   = execute_query("SELECT * FROM Users ORDER BY user_id DESC", fetchall=True)
+    judges  = execute_query("SELECT COUNT(*) AS cnt FROM JUDGE",  fetchone=True)
+    clerks  = execute_query("SELECT COUNT(*) AS cnt FROM CLERK",  fetchone=True)
+    lawyers = execute_query("SELECT COUNT(*) AS cnt FROM LAWYER", fetchone=True)
+    cases   = execute_query("SELECT COUNT(*) AS cnt FROM `CASE`",  fetchone=True)
+    users   = execute_query("SELECT * FROM SYSTEM_USERS ORDER BY user_id DESC", fetchall=True)
 
     return render_template('admin/dashboard.html',
                            judges=judges['cnt'],
@@ -31,10 +24,8 @@ def dashboard():
                            cases=cases['cnt'],
                            users=users)
 
-
 @admin_bp.route('/register_user', methods=['POST'])
 def register_user():
-    """Register a new user and insert into the corresponding role table."""
     username   = request.form.get('username')
     password   = request.form.get('password')
     role       = request.form.get('role')
@@ -42,42 +33,42 @@ def register_user():
     email      = request.form.get('email')
     phone      = request.form.get('phone')
 
-    # 1. Insert into Users table
-    user_id = execute_query(
-        "INSERT INTO Users (username, password, role) VALUES (%s, %s, %s)",
-        (username, password, role),
-        commit=True
-    )
-
-    # 2. Insert into the role-specific table
+    reference_id = 0
+    
+    # Matching strict Database CHECK constraints perfectly
     if role == 'Judge':
-        specialization = request.form.get('specialization', '')
-        execute_query(
-            "INSERT INTO Judge (user_id, name, specialization, email, phone) VALUES (%s, %s, %s, %s, %s)",
-            (user_id, full_name, specialization, email, phone),
+        reference_id = execute_query(
+            "INSERT INTO JUDGE (name, email, phone, designation, court_name) VALUES (%s, %s, %s, 'District Judge', 'Delhi District Court')",
+            (full_name, email, phone),
             commit=True
         )
     elif role == 'Clerk':
-        department = request.form.get('department', '')
-        execute_query(
-            "INSERT INTO Clerk (user_id, name, department, email, phone) VALUES (%s, %s, %s, %s, %s)",
-            (user_id, full_name, department, email, phone),
+        department = request.form.get('department') or 'Civil'
+        reference_id = execute_query(
+            "INSERT INTO CLERK (name, department, phone) VALUES (%s, %s, %s)",
+            (full_name, department, phone),
             commit=True
         )
     elif role == 'Lawyer':
-        bar_number  = request.form.get('bar_number', '')
-        execute_query(
-            "INSERT INTO Lawyer (user_id, name, bar_number, email, phone) VALUES (%s, %s, %s, %s, %s)",
-            (user_id, full_name, bar_number, email, phone),
+        bar_number = request.form.get('bar_number') or 'BAR/000'
+        reference_id = execute_query(
+            "INSERT INTO LAWYER (name, bar_registration_number, email, phone, specialization) VALUES (%s, %s, %s, %s, 'Civil Law')",
+            (full_name, bar_number, email, phone),
             commit=True
         )
     elif role == 'Party':
-        address = request.form.get('address', '')
-        execute_query(
-            "INSERT INTO Party (user_id, name, email, phone, address) VALUES (%s, %s, %s, %s, %s)",
-            (user_id, full_name, email, phone, address),
+        address = request.form.get('address') or 'Unknown Address'
+        reference_id = execute_query(
+            "INSERT INTO PARTY (name, email, phone, address, party_type) VALUES (%s, %s, %s, %s, 'Plaintiff')",
+            (full_name, email, phone, address),
             commit=True
         )
+
+    execute_query(
+        "INSERT INTO SYSTEM_USERS (username, password, role, reference_id) VALUES (%s, %s, %s, %s)",
+        (username, password, role, reference_id),
+        commit=True
+    )
 
     flash(f'{role} "{full_name}" registered successfully!', 'success')
     return redirect(url_for('admin.dashboard'))

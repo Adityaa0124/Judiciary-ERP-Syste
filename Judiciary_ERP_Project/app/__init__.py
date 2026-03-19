@@ -9,7 +9,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # ── Register Blueprints (one per service) ──────────────────────────
+    # ── Register Blueprints (one per service) 
     from app.auth.routes   import auth_bp
     from app.admin.routes  import admin_bp
     from app.clerk.routes  import clerk_bp
