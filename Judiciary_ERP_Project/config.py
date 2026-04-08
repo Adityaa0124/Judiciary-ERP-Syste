@@ -6,5 +6,5 @@ class Config:
     # ── MySQL Configuration ──
     MYSQL_HOST = 'localhost'
     MYSQL_USER = 'root'
-    MYSQL_PASSWORD = '2401'
+    MYSQL_PASSWORD = 'Swaraaj@23#'
     MYSQL_DB = 'judiciary_case_management'
