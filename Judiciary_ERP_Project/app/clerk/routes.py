@@ -94,7 +94,7 @@ def register_case():
             break  # Successfully committed, exit retry loop
             
         except Exception as e:
-            conn.rollback()
+            conn.rollback()  # roll back the entire transaction on any failure
             cursor.close()
             conn.close()
             
@@ -103,16 +103,16 @@ def register_case():
             if '1213' in error_str or 'Deadlock' in error_str:
                 retry_count += 1
                 if retry_count < max_retries:
-                    # Wait with exponential backoff: 0.1s, 0.2s, 0.4s
+                    # On deadlock, wait a bit and retry the whole transaction
                     wait_time = 0.1 * (2 ** (retry_count - 1))
                     flash(f'⚠️ Deadlock detected. Retrying (Attempt {retry_count}/{max_retries})...', 'warning')
                     time.sleep(wait_time)
                 else:
-                    # Abort after maximum retries
+                    # Abort after maximum retries due to repeated deadlock
                     flash(f'Transaction Failed after {max_retries} retries due to deadlock. Error: {e}', 'danger')
                     break
             else:
-                # Non-deadlock error: rollback and stop retrying
+                # Non-deadlock error stops retrying and reports the failure
                 flash(f'Transaction Failed! Rolling back database. Error: {e}', 'danger')
                 break
 
