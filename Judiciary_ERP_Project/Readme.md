@@ -132,7 +132,7 @@ SELECT case_number, status FROM `CASE` WHERE case_number = 'LAB/2024/008';
 
 The status column will show "Hearing Scheduled". This happened because the trigger checked if the case was still "Pending" and since it was, the trigger ran an `UPDATE` on the `CASE` table in the background automatically.
 
----
+pspus---
 
 ## Team Members & Work Distribution
 
