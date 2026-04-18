@@ -70,7 +70,7 @@ Open your web browser and navigate to: [http://127.0.0.1:5000](http://127.0.0.1:
 
 ---
 
-##  Test Login Credentials
+## 🔑 Test Login Credentials
 Use these pre-configured accounts to explore the different role-based dashboards:
 
 | Role | Username | Password |

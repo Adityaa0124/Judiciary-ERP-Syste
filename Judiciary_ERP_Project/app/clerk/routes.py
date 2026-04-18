@@ -34,6 +34,8 @@ def dashboard():
 @clerk_bp.route('/register_case', methods=['POST'])
 def register_case():
     """TASK 6: Register a case, link party, and link lawyer in ONE ACID Transaction."""
+    import time
+    
     case_number = request.form.get('case_number')
     case_type   = request.form.get('case_type')
     description = request.form.get('description')
@@ -42,50 +44,77 @@ def register_case():
     party_id    = request.form.get('party_id')
     lawyer_id   = request.form.get('lawyer_id')
     
-    clerk_username = session.get('username') 
-
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    clerk_username = session.get('username')
     
-    try:
-        # 1. Fetch the actual clerk_id using the ERP gatekeeper
-        cursor.execute("""
-            SELECT c.clerk_id FROM CLERK c 
-            JOIN SYSTEM_USERS u ON c.clerk_id = u.reference_id 
-            WHERE u.username = %s
-        """, (clerk_username,))
-        clerk_data = cursor.fetchone()
-        actual_clerk_id = clerk_data[0] if clerk_data else 1 
-
-        # TRANSACTION START (Task 6)
-        # 2. Insert into CASE table
-        cursor.execute(
-            """INSERT INTO `CASE` (case_number, case_type, status, filing_date, description, priority_level, judge_id, clerk_id)
-               VALUES (%s, %s, 'Pending', %s, %s, 'Medium', %s, %s)""",
-            (case_number, case_type, filing_date, description, judge_id, actual_clerk_id)
-        )
-        new_case_id = cursor.lastrowid
-
-        # 3. Insert into CASE_PARTY (M:N)
-        if party_id:
-            cursor.execute("INSERT INTO CASE_PARTY (case_id, party_id) VALUES (%s, %s)", (new_case_id, party_id))
+    # DEADLOCK RECOVERY: Retry up to 3 times with exponential backoff
+    max_retries = 3
+    retry_count = 0
+    
+    while retry_count < max_retries:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # TASK 6 START: strong transaction control for Task 6
+            # 1) Set the highest isolation level for safety
+            cursor.execute("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE")
+            # 2) Begin the ACID transaction explicitly
+            cursor.execute("START TRANSACTION")
             
-        # 4. Insert into CASE_LAWYER (M:N)
-        if lawyer_id:
-            cursor.execute("INSERT INTO CASE_LAWYER (case_id, lawyer_id) VALUES (%s, %s)", (new_case_id, lawyer_id))
+            # Fetch clerk_id from SYSTEM_USERS for current clerk user
+            cursor.execute("""
+                SELECT c.clerk_id FROM CLERK c 
+                JOIN SYSTEM_USERS u ON c.clerk_id = u.reference_id 
+                WHERE u.username = %s
+            """, (clerk_username,))
+            clerk_data = cursor.fetchone()
+            actual_clerk_id = clerk_data[0] if clerk_data else 1 
 
-        # Commit Transaction
-        conn.commit()
-        flash('ACID Transaction Success: Case registered perfectly!', 'success')
-        
-    except Exception as e:
-        # Rollback on Failure
-        conn.rollback()
-        flash(f'Transaction Failed! Rolling back database. Error: {e}', 'danger')
-        
-    finally:
-        cursor.close()
-        conn.close()
+            # 3) Insert main case record in CASE table
+            cursor.execute(
+                """INSERT INTO `CASE` (case_number, case_type, status, filing_date, description, priority_level, judge_id, clerk_id)
+                   VALUES (%s, %s, 'Pending', %s, %s, 'Medium', %s, %s)""",
+                (case_number, case_type, filing_date, description, judge_id, actual_clerk_id)
+            )
+            new_case_id = cursor.lastrowid
+
+            # 4) Link selected party in CASE_PARTY
+            if party_id:
+                cursor.execute("INSERT INTO CASE_PARTY (case_id, party_id) VALUES (%s, %s)", (new_case_id, party_id))
+                
+            # 5) Link selected lawyer in CASE_LAWYER
+            if lawyer_id:
+                cursor.execute("INSERT INTO CASE_LAWYER (case_id, lawyer_id) VALUES (%s, %s)", (new_case_id, lawyer_id))
+
+            # 6) Commit the entire transaction atomically
+            conn.commit()
+            flash('ACID Transaction Success: Case registered perfectly!', 'success')
+            cursor.close()
+            conn.close()
+            break  # Successfully committed, exit retry loop
+            
+        except Exception as e:
+            conn.rollback()
+            cursor.close()
+            conn.close()
+            
+            # Deadlock detection and retry mechanism
+            error_str = str(e)
+            if '1213' in error_str or 'Deadlock' in error_str:
+                retry_count += 1
+                if retry_count < max_retries:
+                    # Wait with exponential backoff: 0.1s, 0.2s, 0.4s
+                    wait_time = 0.1 * (2 ** (retry_count - 1))
+                    flash(f'⚠️ Deadlock detected. Retrying (Attempt {retry_count}/{max_retries})...', 'warning')
+                    time.sleep(wait_time)
+                else:
+                    # Abort after maximum retries
+                    flash(f'Transaction Failed after {max_retries} retries due to deadlock. Error: {e}', 'danger')
+                    break
+            else:
+                # Non-deadlock error: rollback and stop retrying
+                flash(f'Transaction Failed! Rolling back database. Error: {e}', 'danger')
+                break
 
     return redirect(url_for('clerk.dashboard'))
 
